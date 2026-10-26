@@ -3,6 +3,7 @@ using KpiTracker.Services;
 using KpiTracker.ViewModels;
 using KpiTracker.Views;
 using Microsoft.Extensions.Logging;
+using Microsoft.Maui.Storage;
 
 namespace KpiTracker;
 
@@ -16,6 +17,8 @@ public static class MauiProgram
         // Services: одне сховище на весь час роботи застосунку
         builder.Services.AddSingleton<IKpiService, InMemoryKpiService>();
         builder.Services.AddSingleton<INavigationService, ShellNavigationService>();
+        builder.Services.AddSingleton<IPreferences>(Preferences.Default);
+        builder.Services.AddSingleton<IAppStateService, PreferencesAppStateService>();
 
         // ViewModels
         builder.Services.AddSingleton<MainViewModel>();

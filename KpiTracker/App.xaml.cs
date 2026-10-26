@@ -1,3 +1,4 @@
+using CommunityToolkit.Mvvm.Messaging;
 using KpiTracker.Lifecycle;
 
 namespace KpiTracker;
@@ -27,11 +28,16 @@ public partial class App : Application
     protected override void OnSleep()
     {
         LifecycleLog.Write("App: OnSleep");
+
+        // Сповіщаємо ViewModel: ОС може будь-якої миті завершити процес у фоні,
+        // тож незбережений стан треба записати зараз
+        WeakReferenceMessenger.Default.Send(new AppSleepingMessage());
     }
 
     // Застосунок повернувся на передній план
     protected override void OnResume()
     {
         LifecycleLog.Write("App: OnResume");
+        WeakReferenceMessenger.Default.Send(new AppResumedMessage());
     }
 }

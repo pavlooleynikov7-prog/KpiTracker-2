@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using KpiTracker.Helpers;
 using KpiTracker.Lifecycle;
 using KpiTracker.Models;
@@ -16,14 +17,27 @@ public partial class MainViewModel : ObservableObject, ILifecycleAware
 {
     private readonly IKpiService _kpiService;
     private readonly INavigationService _navigation;
+    private readonly IAppStateService _appState;
 
-    public MainViewModel(IKpiService kpiService, INavigationService navigation)
+    public MainViewModel(IKpiService kpiService, INavigationService navigation, IAppStateService appState)
     {
         _kpiService = kpiService;
         _navigation = navigation;
+        _appState = appState;
+
         Records = new ObservableCollection<KpiRecord>(_kpiService.GetAll());
         Records.CollectionChanged += (_, _) => UpdateSummary();
         UpdateSummary();
+
+        // Відновлення стану при (повторному) запуску застосунку
+        RestoreDraft();
+
+        // Події рівня App надходять через месенджер — App не залежить від ViewModel
+        WeakReferenceMessenger.Default.Register<MainViewModel, AppSleepingMessage>(
+            this, static (vm, _) => vm.SaveDraft("App.OnSleep"));
+        WeakReferenceMessenger.Default.Register<MainViewModel, AppResumedMessage>(
+            this, static (_, _) => LifecycleLog.Write(
+                "MainViewModel: OnResume — процес не завершувався, стан у пам'яті, відновлення не потрібне"));
     }
 
     /// <summary>Колекція показників, до якої прив'язано CollectionView.</summary>
@@ -101,7 +115,7 @@ public partial class MainViewModel : ObservableObject, ILifecycleAware
         Records.Insert(0, record);
 
         StatusMessage = $"Додано: {record.EmployeeName} — {record.MetricName} ({record.CompletionPercent}%)";
-        ClearForm();
+        ClearForm();   // очищує і поля, і збережену чернетку
     }
 
     private bool CanAddKpi() =>
@@ -147,6 +161,32 @@ public partial class MainViewModel : ObservableObject, ILifecycleAware
     public void OnDisappearing()
     {
         LifecycleLog.Write("MainViewModel: OnDisappearing");
+
+        // Перехід на інший екран — теж привід зберегти незавершене введення
+        SaveDraft("OnDisappearing");
+    }
+
+    // ---------- Збереження стану (Preferences) ----------
+
+    private void SaveDraft(string reason)
+    {
+        var draft = new KpiDraft(EmployeeName, MetricName, TargetValueText, ActualValueText);
+        _appState.SaveDraft(draft);
+        LifecycleLog.Write($"MainViewModel: чернетку збережено ({reason}), порожня: {draft.IsEmpty}");
+    }
+
+    private void RestoreDraft()
+    {
+        var draft = _appState.LoadDraft();
+        if (draft.IsEmpty)
+            return;
+
+        EmployeeName = draft.EmployeeName;
+        MetricName = draft.MetricName;
+        TargetValueText = draft.TargetValueText;
+        ActualValueText = draft.ActualValueText;
+        StatusMessage = "Відновлено незавершене введення з попереднього сеансу";
+        LifecycleLog.Write("MainViewModel: чернетку відновлено з Preferences");
     }
 
     /// <summary>Перечитує список із сервісу (після редагування на екрані деталей).</summary>
@@ -166,6 +206,7 @@ public partial class MainViewModel : ObservableObject, ILifecycleAware
         TargetValueText = string.Empty;
         ActualValueText = string.Empty;
         ErrorMessage = string.Empty;
+        _appState.ClearDraft();
     }
 
     private void UpdateSummary()
