@@ -24,10 +24,27 @@ public class InMemoryKpiService : IKpiService
 
     public IReadOnlyList<KpiRecord> GetAll() => _records.AsReadOnly();
 
+    public KpiRecord? GetById(Guid id) => _records.FirstOrDefault(r => r.Id == id);
+
     public void Add(KpiRecord record)
     {
         ArgumentNullException.ThrowIfNull(record);
         _records.Add(record);
+    }
+
+    /// <summary>Оновлює редаговані поля існуючого показника (за Id).</summary>
+    public bool Update(KpiRecord record)
+    {
+        ArgumentNullException.ThrowIfNull(record);
+        var existing = GetById(record.Id);
+        if (existing is null)
+            return false;
+
+        existing.EmployeeName = record.EmployeeName;
+        existing.MetricName = record.MetricName;
+        existing.TargetValue = record.TargetValue;
+        existing.ActualValue = record.ActualValue;
+        return true;
     }
 
     public bool Remove(Guid id) => _records.RemoveAll(r => r.Id == id) > 0;

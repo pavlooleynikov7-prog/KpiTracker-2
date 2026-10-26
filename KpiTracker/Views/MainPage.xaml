@@ -64,8 +64,12 @@
         </Border>
 
         <!-- 3. Рядок стану: показує, що ViewModel змінилась -->
-        <Label Grid.Row="2" Text="{Binding StatusMessage}"
-               FontSize="13" TextColor="{StaticResource Gray600}" />
+        <VerticalStackLayout Grid.Row="2" Spacing="2">
+            <Label Text="{Binding StatusMessage}"
+                   FontSize="13" TextColor="{StaticResource Gray600}" />
+            <Label Text="Натисніть на показник, щоб відкрити деталі"
+                   FontSize="12" TextColor="{StaticResource Gray600}" FontAttributes="Italic" />
+        </VerticalStackLayout>
 
         <!-- 4. Список показників -->
         <CollectionView Grid.Row="3" ItemsSource="{Binding Records}" SelectionMode="None">
@@ -81,6 +85,12 @@
             <CollectionView.ItemTemplate>
                 <DataTemplate x:DataType="models:KpiRecord">
                     <Border Style="{StaticResource CardBorder}">
+                        <!-- Натискання на картку відкриває екран деталей -->
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer
+                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:MainViewModel}}, Path=OpenDetailsCommand, x:DataType=vm:MainViewModel}"
+                                CommandParameter="{Binding .}" />
+                        </Border.GestureRecognizers>
                         <Grid ColumnDefinitions="6,*,Auto" RowDefinitions="Auto,Auto,Auto,Auto"
                               ColumnSpacing="10" RowSpacing="4">
 

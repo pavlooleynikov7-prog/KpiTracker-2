@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using KpiTracker.Helpers;
 using KpiTracker.Models;
+using KpiTracker.Navigation;
 using KpiTracker.Services;
 
 namespace KpiTracker.ViewModels;
@@ -13,10 +14,12 @@ namespace KpiTracker.ViewModels;
 public partial class MainViewModel : ObservableObject
 {
     private readonly IKpiService _kpiService;
+    private readonly INavigationService _navigation;
 
-    public MainViewModel(IKpiService kpiService)
+    public MainViewModel(IKpiService kpiService, INavigationService navigation)
     {
         _kpiService = kpiService;
+        _navigation = navigation;
         Records = new ObservableCollection<KpiRecord>(_kpiService.GetAll());
         Records.CollectionChanged += (_, _) => UpdateSummary();
         UpdateSummary();
@@ -118,6 +121,24 @@ public partial class MainViewModel : ObservableObject
             Records.Remove(record);
             StatusMessage = $"Видалено: {record.EmployeeName} — {record.MetricName}";
         }
+    }
+
+    /// <summary>Відкриває екран деталей обраного показника, передаючи його Id у query-параметрі.</summary>
+    [RelayCommand]
+    private async Task OpenDetailsAsync(KpiRecord? record)
+    {
+        if (record is null)
+            return;
+
+        await _navigation.GoToAsync($"{Routes.KpiDetails}?{Routes.IdParameter}={record.Id}");
+    }
+
+    /// <summary>Перечитує список із сервісу (після редагування на екрані деталей).</summary>
+    private void ReloadRecords()
+    {
+        Records.Clear();
+        foreach (var record in _kpiService.GetAll())
+            Records.Add(record);
     }
 
     /// <summary>Очищує поля форми.</summary>

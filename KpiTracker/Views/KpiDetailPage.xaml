@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:KpiTracker.ViewModels"
+             xmlns:helpers="clr-namespace:KpiTracker.Helpers"
+             x:Class="KpiTracker.Views.KpiDetailPage"
+             x:DataType="vm:KpiDetailViewModel"
+             Title="Деталі показника">
+
+    <ContentPage.Resources>
+        <helpers:KpiStatusToColorConverter x:Key="StatusToColor" />
+        <helpers:KpiStatusToTextConverter x:Key="StatusToText" />
+    </ContentPage.Resources>
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="12">
+
+            <!-- Підсумок виконання: перераховується під час редагування -->
+            <Border Style="{StaticResource CardBorder}" IsVisible="{Binding IsLoaded}">
+                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto" RowSpacing="6">
+                    <Label Text="{Binding EmployeeName}" FontSize="18" FontAttributes="Bold" />
+                    <Label Grid.Row="1" Text="{Binding PeriodText, StringFormat='Період: {0}'}"
+                           TextColor="{StaticResource Gray600}" FontSize="13" />
+                    <Label Grid.Column="1" Grid.RowSpan="2" VerticalOptions="Center"
+                           Text="{Binding CompletionPreview, StringFormat='{0}%'}" FontSize="28" FontAttributes="Bold"
+                           TextColor="{Binding StatusPreview, Converter={StaticResource StatusToColor}}" />
+                    <ProgressBar Grid.Row="2" Grid.ColumnSpan="2" Progress="{Binding ProgressPreview}"
+                                 ProgressColor="{Binding StatusPreview, Converter={StaticResource StatusToColor}}" />
+                </Grid>
+            </Border>
+
+            <Label Text="{Binding StatusPreview, Converter={StaticResource StatusToText}}"
+                   TextColor="{Binding StatusPreview, Converter={StaticResource StatusToColor}}"
+                   FontAttributes="Bold" IsVisible="{Binding IsLoaded}" />
+
+            <!-- Форма редагування -->
+            <Border Style="{StaticResource CardBorder}" IsVisible="{Binding IsLoaded}">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Редагування" Style="{StaticResource SectionTitle}" />
+
+                    <Label Text="Співробітник" FontSize="12" TextColor="{StaticResource Gray600}" />
+                    <Entry Text="{Binding EmployeeName}" />
+
+                    <Label Text="Показник" FontSize="12" TextColor="{StaticResource Gray600}" />
+                    <Entry Text="{Binding MetricName}" />
+
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="8" RowDefinitions="Auto,Auto">
+                        <Label Text="План" FontSize="12" TextColor="{StaticResource Gray600}" />
+                        <Label Grid.Column="1" Text="Факт" FontSize="12" TextColor="{StaticResource Gray600}" />
+                        <Entry Grid.Row="1" Keyboard="Numeric" Text="{Binding TargetValueText}" />
+                        <Entry Grid.Row="1" Grid.Column="1" Keyboard="Numeric" Text="{Binding ActualValueText}" />
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+
+            <Label Text="{Binding ErrorMessage}" IsVisible="{Binding HasError}"
+                   TextColor="{StaticResource Danger}" />
+
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                <Button Text="Зберегти" Command="{Binding SaveCommand}" />
+                <Button Grid.Column="1" Text="Скасувати" Style="{StaticResource SecondaryButton}"
+                        Command="{Binding CancelCommand}" />
+            </Grid>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
