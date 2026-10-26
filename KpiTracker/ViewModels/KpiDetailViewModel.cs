@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using KpiTracker.Helpers;
+using KpiTracker.Lifecycle;
 using KpiTracker.Models;
 using KpiTracker.Navigation;
 using KpiTracker.Services;
@@ -11,7 +12,7 @@ namespace KpiTracker.ViewModels;
 /// ViewModel другого екрана: деталі та редагування обраного показника KPI.
 /// Отримує ідентифікатор показника через query-параметр навігації (IQueryAttributable).
 /// </summary>
-public partial class KpiDetailViewModel : ObservableObject, IQueryAttributable
+public partial class KpiDetailViewModel : ObservableObject, IQueryAttributable, ILifecycleAware
 {
     private readonly IKpiService _kpiService;
     private readonly INavigationService _navigation;
@@ -63,6 +64,8 @@ public partial class KpiDetailViewModel : ObservableObject, IQueryAttributable
     /// </summary>
     public void ApplyQueryAttributes(IDictionary<string, object> query)
     {
+        LifecycleLog.Write($"KpiDetailViewModel: ApplyQueryAttributes ({string.Join(", ", query.Select(q => $"{q.Key}={q.Value}"))})");
+
         if (query.TryGetValue(Routes.IdParameter, out var value) &&
             Guid.TryParse(value?.ToString(), out var id))
         {
@@ -93,6 +96,18 @@ public partial class KpiDetailViewModel : ObservableObject, IQueryAttributable
         PeriodText = record.Period.ToString("MM.yyyy");
         ErrorMessage = string.Empty;
         IsLoaded = true;
+    }
+
+    // ---------- Життєвий цикл (ILifecycleAware) ----------
+
+    public void OnAppearing()
+    {
+        LifecycleLog.Write($"KpiDetailViewModel: OnAppearing (завантажено: {IsLoaded})");
+    }
+
+    public void OnDisappearing()
+    {
+        LifecycleLog.Write("KpiDetailViewModel: OnDisappearing");
     }
 
     partial void OnTargetValueTextChanged(string value) => UpdatePreview();

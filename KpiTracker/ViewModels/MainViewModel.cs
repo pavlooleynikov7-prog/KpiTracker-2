@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using KpiTracker.Helpers;
+using KpiTracker.Lifecycle;
 using KpiTracker.Models;
 using KpiTracker.Navigation;
 using KpiTracker.Services;
@@ -11,7 +12,7 @@ namespace KpiTracker.ViewModels;
 /// <summary>
 /// ViewModel головного екрана: список показників KPI, форма введення та підсумки.
 /// </summary>
-public partial class MainViewModel : ObservableObject
+public partial class MainViewModel : ObservableObject, ILifecycleAware
 {
     private readonly IKpiService _kpiService;
     private readonly INavigationService _navigation;
@@ -131,6 +132,21 @@ public partial class MainViewModel : ObservableObject
             return;
 
         await _navigation.GoToAsync($"{Routes.KpiDetails}?{Routes.IdParameter}={record.Id}");
+    }
+
+    // ---------- Життєвий цикл (ILifecycleAware) ----------
+
+    public void OnAppearing()
+    {
+        LifecycleLog.Write("MainViewModel: OnAppearing");
+
+        // Після повернення з екрана деталей показник міг змінитися — оновлюємо список і підсумки
+        ReloadRecords();
+    }
+
+    public void OnDisappearing()
+    {
+        LifecycleLog.Write("MainViewModel: OnDisappearing");
     }
 
     /// <summary>Перечитує список із сервісу (після редагування на екрані деталей).</summary>
